@@ -42,5 +42,28 @@ module cpu16(
     assign writeM = c_instruction && instruction[3];
     assign outM = aluoutput;
     assign addressM = outA[14:0];
+
+    //Control Part
+    //jump conditions depend on comparison of ALU output and jump bits
+    // j1 = instruction[2] (Jump if < 0)
+    // j2 = instruction[1] (Jump if == 0)
+    // j3 = instruction[0] (Jump if > 0)
+    
+    //First, we find > 0 (pos)
+    assign isPos = !isNeg && !isZero;
+    
+    //Now we check the other conditions and use assembly keywords for better understanding
+    assign JLT = isNeg && instruction[2]; // < 0 -> j1
+    assign JGT = isPos && instruction[0]; // > 0 -> j3
+    assign JEQ = isZero && instruction[1]; // ==0 -> j2
+    assign JLE = JLT || JEQ; // <= 0
+    assign condition_met = JLE || JGT; //something is always 1. - conditions is not met when all jump bits are zero. 
+    
+    //PC and its load
+    assign loadPC = c_instruction && condition_met;
+    
+    program_counter program_c (.in(outA), .reset(reset), .load(loadPC), .inc(1'b1), .clk(clk), .out(pc_full));
+    
+    assign pc = pc_full[14:0];
     
 endmodule
